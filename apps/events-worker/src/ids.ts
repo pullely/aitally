@@ -36,12 +36,22 @@ export function memberPublicId(uuid: string): string {
   return `mem_${uuidToHex(uuid)}`;
 }
 
+export function aiToolPublicId(uuid: string): string {
+  return `ait_${uuidToHex(uuid)}`;
+}
+
+export function aiToolReviewPublicId(uuid: string): string {
+  return `atr_${uuidToHex(uuid)}`;
+}
+
 const SUBJECT_KIND_PREFIX: Record<string, (uuid: string) => string> = {
   organization: orgPublicId,
   project: projectPublicId,
   environment: environmentPublicId,
   invitation: invitationPublicId,
   member: memberPublicId,
+  ai_tool: aiToolPublicId,
+  ai_tool_review: aiToolReviewPublicId,
 };
 
 export function toPublicId(kind: string, rawId: string): string {

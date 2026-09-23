@@ -169,7 +169,47 @@ const renderInvitationAccepted: TemplateRenderer = (data, opts) => {
   return { subject, html, text };
 };
 
+/**
+ * Aitally: this person is now the accountable owner of an AI tool in the
+ * company's AI register. Names the tool, what it is used for, its recorded
+ * risk level and the next review date: what an owner answers for.
+ */
+const renderTallyToolOwnerAssigned: TemplateRenderer = (data, opts) => {
+  const toolName = str(data, "toolName");
+  const vendor = str(data, "vendor");
+  const purpose = str(data, "purpose");
+  const riskLabel = str(data, "riskLabel");
+  const nextReviewOn = str(data, "nextReviewOn");
+  const toolUrl = str(data, "toolUrl");
+  const brand = opts.brandName ?? "";
+  const named = vendor ? `${toolName} (${vendor})` : toolName;
+  const subject = `You own ${toolName} in the AI register`;
+
+  const text = [
+    `You are now the accountable owner of ${named} in your company's AI register.`,
+    `It is recorded as used for: ${purpose}`,
+    `Recorded risk level: ${riskLabel}. Next review due on ${nextReviewOn}.`,
+    ...(toolUrl ? [toolUrl] : []),
+  ].join("\n\n");
+
+  const html = htmlShell(
+    `You own ${escapeHtml(toolName)}`,
+    [
+      `<p style="margin:0 0 16px;font-size:14px;">You are now the accountable owner of <strong>${escapeHtml(named)}</strong> in your company's AI register.</p>`,
+      `<p style="margin:0 0 16px;font-size:14px;">It is recorded as used for: ${escapeHtml(purpose)}</p>`,
+      `<p style="margin:0 0 16px;font-size:14px;">Recorded risk level: <strong>${escapeHtml(riskLabel)}</strong>. Next review due on <strong>${escapeHtml(nextReviewOn)}</strong>.</p>`,
+      toolUrl
+        ? `<p style="margin:0 0 16px;"><a href="${escapeHtml(toolUrl)}" style="display:inline-block;padding:10px 16px;background:#2f4f6b;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;">Open the register</a></p>`
+        : "",
+    ].join(""),
+    escapeHtml(brand ? `Sent by ${brand}` : "Sent by Aitally"),
+  );
+
+  return { subject, html, text };
+};
+
 const TEMPLATES: Record<string, TemplateRenderer> = {
+  "tally.tool.owner_assigned": renderTallyToolOwnerAssigned,
   "auth.magic_link": renderMagicLink,
   "invitation.created": renderInvitationCreated,
   "invitation.accepted": renderInvitationAccepted,

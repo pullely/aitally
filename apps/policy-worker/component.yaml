@@ -52,4 +52,4 @@ spec:
     surface: policy
     runtime: cloudflare
 # ci: trigger full-component verification (orun v2.12.0 upgrade — PR #183)
-# orun: redeploy 04-workers 20260923T181835Z
+# orun: redeploy AT1 — packages/db (trap-16 D1 fix, tally context), packages/policy-engine (tally.* actions), packages/contracts (tally-worker notifications caller)
