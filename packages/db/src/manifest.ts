@@ -183,5 +183,14 @@ export const manifest: MigrationManifest = {
       description:
         "Connection pointer on the inbound-delivery inbox (nullable connection_id + partial index) — lets the per-connection delivery log scope precisely; attributed by the IG2 cron drain",
     },
+    {
+      id: "200_tally_register",
+      context: "tally",
+      path: "200_tally_register/up.sql",
+      checksum:
+        "f3a32b72522680f93437faadf0b10e3dcfa274b4a1246ed76cc0c94418f9a24f",
+      description:
+        "AI tool register (AT1) — the AI systems a company uses (purpose, data categories, risk level on the EU AI Act's tiers, status, accountable owner, review interval) and the append-only dated reviews that set their status and next review; a prohibited risk level only on a blocked or retired tool",
+    },
   ],
 };

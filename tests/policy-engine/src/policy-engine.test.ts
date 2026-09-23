@@ -686,7 +686,8 @@ describe("listEffectivePermissions", () => {
     expect(result.derivedScope.orgId).toBe("org_1");
 
     const allowed = result.permissions.filter((p) => p.allow);
-    expect(allowed.length).toBe(31);
+    // 31 baseline actions + the two tally.* actions AT1 adds.
+    expect(allowed.length).toBe(33);
   });
 
   it("returns limited permissions for viewer", () => {
@@ -705,6 +706,7 @@ describe("listEffectivePermissions", () => {
       "organization.webhook.read",
       "project.list",
       "project.webhook.read",
+      "tally.read",
     ]);
   });
 

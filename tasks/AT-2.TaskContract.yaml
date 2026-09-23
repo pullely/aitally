@@ -1,0 +1,49 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: AT-2
+spec:
+  goal: A company can register every AI tool it uses (purpose, the data that reaches it, its risk level, status and accountable owner), see the register's summary, and record dated reviews that set a tool's status and risk and schedule its next review — with a prohibited practice never recorded on a tool still in use.
+  # Component refs, fully qualified (bare names and paths do not match — runbook
+  # trap 15). identity-worker, membership-worker, api-edge and web-console-next
+  # carry the SOLO_MODE switch (Solo goes off: several staff per company). Every
+  # other worker is here for runbook trap 17: this task changes packages/db (the
+  # trap-16 D1 fix and the tally context), packages/policy-engine (tally.* actions)
+  # and packages/contracts (the notifications allow-list), and a worker only
+  # redeploys when its own component.yaml changes.
+  affects:
+    - default/aitally/db
+    - default/aitally/db-tests
+    - default/aitally/db-migrate
+    - default/aitally/contracts
+    - default/aitally/contracts-tests
+    - default/aitally/sdk
+    - default/aitally/policy-engine
+    - default/aitally/policy-engine-tests
+    - default/aitally/tally-worker
+    - default/aitally/tally-worker-tests
+    - default/aitally/api-edge
+    - default/aitally/api-edge-tests
+    - default/aitally/events-worker
+    - default/aitally/notifications-worker
+    - default/aitally/identity-worker
+    - default/aitally/membership-worker
+    - default/aitally/web-console-next
+    - default/aitally/web-console-next-tests
+    - default/aitally/admin-worker
+    - default/aitally/billing-worker
+    - default/aitally/config-worker
+    - default/aitally/integrations-worker
+    - default/aitally/metering-worker
+    - default/aitally/policy-worker
+    - default/aitally/projects-worker
+    - default/aitally/webhooks-worker
+  doneWhen:
+    - the trap-16 D1 fix (factory/patches/cirrus-d1-fix.patch) is applied, so audited writes and organization create work on D1
+    - migration 200_tally_register is in the manifest, replays green against node:sqlite, and is applied on stage and prod
+    - on stage a signed-in user creates an organization (201), registers a tool with owner, purpose, data categories and risk level, and sees it in the register summary
+    - recording a review sets the tool's status and risk level and moves nextReviewOn to the review date plus the interval
+    - a prohibited risk level on a tool that is not blocked or retired is refused with 422
+    - a non-member reading the register gets 404; a viewer registering a tool gets 404
+    - tests/tally-worker runs the worker over a real SQLite engine and is green in CI
+  gates: []

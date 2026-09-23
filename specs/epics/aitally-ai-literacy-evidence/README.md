@@ -28,7 +28,7 @@ asks, the company exports what it did and when.
 
 | Field | Value |
 |-------|-------|
-| Status | Draft |
+| Status | In progress: AT0 landed (#9), AT1 in review |
 | Cluster | **AT** (AT0–AT3) |
 | Owner(s) | `apps/tally-worker` (the register, the training record, the evidence packs, the reminder cron) · `apps/api-edge` (the facade) · `packages/db` (migrations `200`–`220`) · `packages/contracts` + `packages/sdk` (the wire) · `infra/terraform/cloudflare-r2` (training content and evidence packs, from AT2) · `apps/notifications-worker` (the templates) · `apps/web-console-next` (the surface) |
 | Builds on | `cirrus baseline-v12`: organizations as companies, members as staff, the policy engine for who may edit, `notifications-worker` for email, the audit trail in `events-worker`, api-edge rate limiting |
