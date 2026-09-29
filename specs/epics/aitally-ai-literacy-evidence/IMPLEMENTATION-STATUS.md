@@ -8,7 +8,7 @@ the code departed from `design.md`.
 | AT0 — the spec | ✅ Landed. Doc set on `main` and pushed with `orun spec push` | #9 (d5c4151) |
 | AT1 — the AI tool register | ✅ Landed. Deploy run 35910146783 on `main` green 66/66; stage smoke 29/29, prod 7/7 (2026-09-23) | #10 (f3f91ed), task AT-2 |
 | AT2 — training assignments, completion records and escalating reminders | ✅ Landed. Deploy run 36642817780 on `main` green 34/34 (cloudflare-r2 applied stage + prod, `210_tally_training` migrated, `0 7 * * *` scheduled on tally-worker stage + prod); stage smoke 59/59, prod 16/16 (2026-09-29) | #11 (bf51aeb), task AT-3 |
-| AT3 — the regulator-ready evidence pack | In progress | task AT-4 |
+| AT3 — the regulator-ready evidence pack | ✅ Landed. Deploy run 36645221915 on `main` green 28/28 (`220_tally_evidence` migrated; identity-worker redeployed with its public hostname closed); stage smoke of every milestone 105/105, prod 23/23 (2026-09-29) | #12 (ff749ed), task AT-4 |
 
 ## Departures from the design
 
@@ -98,3 +98,39 @@ the code departed from `design.md`.
   writer carried over from leakbook and arcdesk.
 - **identity-worker's public `workers.dev` hostname is closed** in this PR
   (runbook trap 37): `"workers_dev": false` on stage and prod.
+
+## Verification at ship (2026-09-29, after AT3's deploy)
+
+Every milestone was driven end to end on stage by one scripted smoke (105
+checks, all passing on the first run), signed in through stage's
+`DEBUG_DELIVERY`:
+
+- **AT1**: organization create 201; a tool registered and reviewed
+  (`nextReviewOn` moved a year from the review date); a second tool retired by
+  review.
+- **AT2**: a learner invited as viewer and joined; a course with a quiz; the PDF
+  material uploaded and downloaded byte for byte, with the SHA-256 the worker
+  computed, R2 checked and `x-content-sha256` returned. Only the assignee
+  completed (the owner, the learner on the owner's assignment, and an outsider
+  all got 404). A failed attempt was recorded, the pass stored score, time and
+  material hash, and a second completion was refused (409). `/v1/me/training`
+  returned exactly each caller's assignments. Six assignments due today +7, +1,
+  0, −3, −7 and −14: the first sweep claimed each rung once (late3/late7 copied
+  the tool owner, late14 the org owner through membership's `usr_` ids), and
+  notifications-worker accepted every reminder. The second sweep on the same day
+  sent nothing (`alreadySent` 6). The `0 7 * * *` schedule is live on
+  tally-worker in stage and prod.
+- **AT3**: the per-employee export listed exactly that person's records (JSON
+  and CSV). An org pack's `manifest.json` matched the pack's `manifestSha256`,
+  and every file downloaded from R2 with the digest the manifest lists; the
+  retired tool and its review were in it. A second pack was a new `atx_`, and
+  the first pack's objects were unchanged (re-verified, and R2's
+  `last_modified` predates the second pack). PUT/PATCH/DELETE on a pack: 405.
+- **Cross-org**: a user in another organization got 404 on every route tried.
+- **Prod**: `/health` 200, all 19 new routes 401 unauthenticated where an
+  unknown route is 404, identity-worker's public hostname 404, and
+  `DEBUG_DELIVERY` false.
+
+"Sent" for a reminder means accepted by notifications-worker. Cloudflare Email
+refuses delivery from `mail.aitally.app`, which this account does not own
+(runbook trap 27).

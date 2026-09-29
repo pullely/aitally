@@ -28,14 +28,14 @@ asks, the company exports what it did and when.
 
 | Field | Value |
 |-------|-------|
-| Status | In progress: AT0 (#9), AT1 (#10) and AT2 (#11) landed ✅, AT3 in progress |
+| Status | ✅ Shipped (2026-09-29): AT0–AT3 landed, deployed green on `main`, and proven end to end on stage |
 | Cluster | **AT** (AT0–AT3) |
 | Owner(s) | `apps/tally-worker` (the register, the training record, the evidence packs, the reminder cron) · `apps/api-edge` (the facade) · `packages/db` (migrations `200`–`220`) · `packages/contracts` + `packages/sdk` (the wire) · `infra/terraform/cloudflare-r2` (training content and evidence packs, from AT2) · `apps/notifications-worker` (the templates) · `apps/web-console-next` (the surface) |
 | Builds on | `cirrus baseline-v12`: organizations as companies, members as staff, the policy engine for who may edit, `notifications-worker` for email, the audit trail in `events-worker`, api-edge rate limiting |
 | Changes | Adds one bounded context (`tally`), one worker, one R2 bucket per environment (AT2) and one cron trigger (AT2). Turns the Solo profile off, because a company has several staff and a consultant may serve several companies. Every baseline context is reused, and none is changed beyond new actions, templates and subject prefixes. |
 | Decisions locked | (1) A company is a cirrus organization, and its staff are its members. Staff who only take training join as `viewer`. (2) Nothing in the register is deleted. A tool that is no longer used is `retired` and stays in the register as evidence. (3) A risk level of `prohibited` can only be held by a `blocked` or `retired` tool, and the schema enforces this. (4) Each tool review is its own dated row, and the tool's `next_review_on` is derived from the last review. (5) Training completion, the score and the version of the content that was taken are written once and never edited. A correction is a new assignment. (6) Aitally ships no legal advice and no training content of its own. The company uploads its own material (see AT-D). |
 | Gate | AT1 is the first user-visible change (the register). AT2 makes the training obligation provable. AT3 is what the company hands to an authority. |
-| Shipped as | |
+| Shipped as | AT0 #9 (d5c4151) · AT1 #10 (f3f91ed, deploy run 35910146783, 66/66) · AT2 #11 (bf51aeb, deploy run 36642817780, 34/34) · AT3 #12 (ff749ed, deploy run 36645221915, 28/28). Live: `https://aitally-api-edge-{stage,prod}.nexo-7be.workers.dev`. Stage smoke of every milestone 105/105; prod 23/23 (health, 401 on every new route, `DEBUG_DELIVERY=false`). Email is accepted by notifications-worker but not delivered anywhere until a sending domain is owned (runbook trap 27). |
 
 ## Read order
 

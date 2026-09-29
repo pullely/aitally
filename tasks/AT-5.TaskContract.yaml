@@ -1,0 +1,11 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: AT-5
+spec:
+  goal: The epic's README reads Shipped once AT3's deploy run on main is fully green and every milestone is proven on stage, with Shipped as filled in and the evidence in the as-built record.
+  affects: []
+  doneWhen:
+    - README status reads Shipped and Shipped as names every milestone's PR and deploy run
+    - IMPLEMENTATION-STATUS shows AT3 landed with its deploy run and the stage and prod checks
+  gates: []
