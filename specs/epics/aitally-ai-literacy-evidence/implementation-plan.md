@@ -11,7 +11,7 @@ one day. AT2 and AT3 land the next day. Each milestone's tests run green
 locally before its pull request opens, because every push to a pull request
 spends mints.
 
-## AT0 — the spec
+## AT0 — the spec ✅
 
 This doc set, merged to `main` and attached to the epic with `orun spec push`.
 
@@ -19,7 +19,7 @@ This doc set, merged to `main` and attached to the epic with `orun spec push`.
 - the five documents are on `main`
 - `orun spec list --epic aitally-ai-literacy-evidence` shows them
 
-## AT1 — the AI tool register
+## AT1 — the AI tool register ✅
 
 This milestone builds the `tally` bounded context end to end:
 

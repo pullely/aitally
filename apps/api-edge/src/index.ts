@@ -6,7 +6,7 @@ import { handlePreflight, applyCorsHeaders } from "./cors";
 import { isAuthRoute, handleAuthRoute } from "./auth-facade";
 import { isOrgRoute, handleOrgRoute } from "./org-facade";
 import { isProjectRoute, handleProjectRoute } from "./project-facade";
-import { isTallyRoute, handleTallyRoute } from "./tally-facade";
+import { isTallyRoute, isTallyMeRoute, handleTallyRoute } from "./tally-facade";
 import { isAuditRoute, handleAuditRoute } from "./audit-facade";
 import { isConfigRoute, handleConfigRoute } from "./config-facade";
 import { isWebhooksRoute, handleWebhooksRoute } from "./webhooks-facade";
@@ -45,6 +45,9 @@ export default {
       // reads as "not found" to the single-user surface. Flip SOLO_MODE off and
       // this branch is dead, restoring the full baseline. (See ./solo-mode.ts.)
       response = notFound(requestId, url.pathname);
+    } else if (isTallyMeRoute(url.pathname)) {
+      // AT2: /v1/me/training → tally-worker, ahead of the auth facade and any /v1/me route.
+      response = await handleTallyRoute(request, env, requestId, url.pathname);
     } else if (isAuthRoute(url.pathname)) {
       response = await handleAuthRoute(request, env, requestId, url.pathname);
     } else if (isAuditRoute(url.pathname)) {

@@ -66,11 +66,16 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
             // Solo: projects & usage/quota are platform plumbing the B2C user
             // never sees; their surfaces collapse to the Settings (Account) panel.
             { href: `${orgBase}/ai-tools`, label: "AI register", icon: "Bot" },
+            { href: `${orgBase}/training`, label: "Training", icon: "BookOpen" },
+            { href: "/training", label: "My training", icon: "GraduationCap" },
             { href: `${orgBase}/settings`, label: "Settings", icon: "Settings", subPanel: true },
           ]
         : [
-            // The product itself: the company's AI tool register.
+            // The product itself: the company's AI tool register, its staff
+            // training record (AT2), and the signed-in person's own training.
             { href: `${orgBase}/ai-tools`, label: "AI register", icon: "Bot" },
+            { href: `${orgBase}/training`, label: "Training", icon: "BookOpen" },
+            { href: "/training", label: "My training", icon: "GraduationCap" },
             { href: `${orgBase}/projects`, label: "Projects", icon: "FolderKanban" },
             { href: `${orgBase}/usage`, label: "Usage & quota", icon: "Gauge" },
             // Opens the dedicated settings panel — flagged so the renderer shows a ›.

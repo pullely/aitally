@@ -68,3 +68,4 @@ spec:
     runtime: cloudflare
 # ci: cycle-break pass 1 — deploy cluster with feedback edges stripped (20260622T135810Z)
 # orun: redeploy AT1 — packages/db (trap-16 D1 fix, tally context), packages/policy-engine (tally.* actions), packages/contracts (tally-worker notifications caller)
+# orun: redeploy AT2 — training (packages/db 210_tally_training + training repository, packages/contracts training wire)

@@ -10,6 +10,8 @@ import {
   ChevronRight,
   FolderKanban,
   Bot,
+  BookOpen,
+  GraduationCap,
   Boxes,
   KeyRound,
   Settings,
@@ -36,6 +38,8 @@ import { SidebarFind } from "./sidebar-find";
 
 const ICONS: Record<string, LucideIcon> = {
   Bot,
+  BookOpen,
+  GraduationCap,
   Building2,
   FolderKanban,
   Boxes,

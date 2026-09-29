@@ -92,23 +92,85 @@ export function fakeFleet(): { MEMBERSHIP_WORKER: Fetcher; POLICY_WORKER: Fetche
   };
 }
 
+/**
+ * An in-memory R2 bucket with the semantics tally-worker relies on: put
+ * verifies a supplied sha256 (as R2 does) and stores bytes; get returns them.
+ */
+export function fakeR2(): { bucket: R2Bucket; objects: Map<string, { bytes: Uint8Array; contentType: string; custom: Record<string, string> }>; puts: string[] } {
+  const objects = new Map<string, { bytes: Uint8Array; contentType: string; custom: Record<string, string> }>();
+  const puts: string[] = [];
+  const bucket = {
+    async put(key: string, value: Uint8Array | string, opts: { sha256?: string; httpMetadata?: { contentType?: string }; customMetadata?: Record<string, string>; onlyIf?: unknown } = {}) {
+      const bytes = typeof value === "string" ? new TextEncoder().encode(value) : new Uint8Array(value);
+      if (opts.sha256) {
+        const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", bytes));
+        const hex = [...digest].map((b) => b.toString(16).padStart(2, "0")).join("");
+        if (hex !== opts.sha256) throw new Error("R2: sha256 mismatch");
+      }
+      if (opts.onlyIf && objects.has(key)) return null; // conditional put: never overwrite
+      puts.push(key);
+      objects.set(key, { bytes, contentType: opts.httpMetadata?.contentType ?? "application/octet-stream", custom: opts.customMetadata ?? {} });
+      return { key, size: bytes.byteLength };
+    },
+    async get(key: string) {
+      const o = objects.get(key);
+      if (!o) return null;
+      return { body: new Blob([o.bytes]).stream(), size: o.bytes.byteLength, customMetadata: o.custom, httpMetadata: { contentType: o.contentType } };
+    },
+    async head(key: string) {
+      const o = objects.get(key);
+      return o ? { key, size: o.bytes.byteLength, customMetadata: o.custom } : null;
+    },
+  };
+  return { bucket: bucket as unknown as R2Bucket, objects, puts };
+}
+
 export interface TestWorld {
   env: Env;
   db: DatabaseSync;
   sent: unknown[];
+  r2: ReturnType<typeof fakeR2>;
 }
 
 export function world(): TestWorld {
   const db = migratedDatabase();
   const fleet = fakeFleet();
+  const r2 = fakeR2();
   const env = {
     ENVIRONMENT: "test",
     PLATFORM_DB: d1Over(db),
+    TALLY_CONTENT: r2.bucket,
     MEMBERSHIP_WORKER: fleet.MEMBERSHIP_WORKER,
     POLICY_WORKER: fleet.POLICY_WORKER,
     NOTIFICATIONS_WORKER: fleet.NOTIFICATIONS_WORKER,
   } as Env;
-  return { env, db, sent: fleet.sent };
+  return { env, db, sent: fleet.sent, r2 };
+}
+
+/** The public user id membership stores on D1: `usr_<32 hex>` (runbook trap 39). */
+export const usr = (uuid: string): string => `usr_${uuid.replace(/-/g, "")}`;
+
+/**
+ * Seed identity + membership rows the way D1 holds them in production:
+ * identity_users.id is the UUID, membership's subject_id the `usr_` public id
+ * (trap 39) — unless `subjectForm` says "uuid". OWNER is the org's owner,
+ * MEMBER a builder, VIEWER a viewer; STRANGER is in no org.
+ */
+export function seedMembership(db: DatabaseSync, orgUuid: string, subjectForm: "public" | "uuid" = "public"): void {
+  db.prepare("INSERT OR IGNORE INTO membership_organizations (id, name, slug, slug_lower) VALUES (?, ?, ?, ?)").run(orgUuid, "Acme Ltd", "acme", "acme");
+  for (const [uuid, role] of [
+    [OWNER, "owner"],
+    [MEMBER, "builder"],
+    [VIEWER, "viewer"],
+  ] as const) {
+    const email = EMAILS[uuid]!;
+    db.prepare("INSERT OR IGNORE INTO identity_users (id, email, email_lower) VALUES (?, ?, ?)").run(uuid, email, email.toLowerCase());
+    const subject = subjectForm === "public" ? usr(uuid) : uuid;
+    db.prepare("INSERT INTO membership_organization_members (id, org_id, subject_id) VALUES (?, ?, ?)").run(crypto.randomUUID(), orgUuid, subject);
+    db.prepare("INSERT INTO membership_role_assignments (id, org_id, subject_id, role) VALUES (?, ?, ?, ?)").run(crypto.randomUUID(), orgUuid, subject, role);
+  }
+  const stranger = EMAILS[STRANGER]!;
+  db.prepare("INSERT OR IGNORE INTO identity_users (id, email, email_lower) VALUES (?, ?, ?)").run(STRANGER, stranger, stranger);
 }
 
 export const EMAILS: Record<string, string> = {

@@ -44,6 +44,20 @@ export function aiToolReviewPublicId(uuid: string): string {
   return `atr_${uuidToHex(uuid)}`;
 }
 
+// AT2 training and (ahead of AT3) evidence packs, so the audit trail shows
+// their public ids from the day they are written.
+export function trainingCoursePublicId(uuid: string): string {
+  return `atc_${uuidToHex(uuid)}`;
+}
+
+export function trainingAssignmentPublicId(uuid: string): string {
+  return `ata_${uuidToHex(uuid)}`;
+}
+
+export function evidencePackPublicId(uuid: string): string {
+  return `atx_${uuidToHex(uuid)}`;
+}
+
 const SUBJECT_KIND_PREFIX: Record<string, (uuid: string) => string> = {
   organization: orgPublicId,
   project: projectPublicId,
@@ -52,6 +66,9 @@ const SUBJECT_KIND_PREFIX: Record<string, (uuid: string) => string> = {
   member: memberPublicId,
   ai_tool: aiToolPublicId,
   ai_tool_review: aiToolReviewPublicId,
+  training_course: trainingCoursePublicId,
+  training_assignment: trainingAssignmentPublicId,
+  evidence_pack: evidencePackPublicId,
 };
 
 export function toPublicId(kind: string, rawId: string): string {

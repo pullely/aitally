@@ -20,10 +20,10 @@ import type { AiTool, AiToolFields } from "@saas/db/tally";
 export type Validation<T> = { valid: true; value: T } | { valid: false; fields: Record<string, string[]> };
 
 // No ':' anywhere: an address is part of a notification idempotency key.
-const EMAIL_RE = /^[^\s@:]+@[^\s@:]+\.[^\s@:]+$/;
+export const EMAIL_RE = /^[^\s@:]+@[^\s@:]+\.[^\s@:]+$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
-function isObject(v: unknown): v is Record<string, unknown> {
+export function isObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
@@ -34,7 +34,7 @@ export function isCalendarDate(value: string): boolean {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
 }
 
-class Collector {
+export class Collector {
   fields: Record<string, string[]> = {};
   add(field: string, message: string): void {
     (this.fields[field] ??= []).push(message);
@@ -45,7 +45,7 @@ class Collector {
 }
 
 /** undefined = absent; null = explicitly cleared; string = the trimmed value. */
-function text(
+export function text(
   c: Collector,
   body: Record<string, unknown>,
   field: string,
@@ -70,13 +70,13 @@ function text(
   return trimmed.length === 0 ? null : trimmed;
 }
 
-function email(c: Collector, body: Record<string, unknown>, field: string, required: boolean): string | null | undefined {
+export function email(c: Collector, body: Record<string, unknown>, field: string, required: boolean): string | null | undefined {
   const v = text(c, body, field, { required, max: 254 });
   if (typeof v === "string" && !EMAIL_RE.test(v)) c.add(field, "Not an email address");
   return typeof v === "string" ? v.toLowerCase() : v;
 }
 
-function oneOf<T extends string>(
+export function oneOf<T extends string>(
   c: Collector,
   body: Record<string, unknown>,
   field: string,

@@ -208,8 +208,84 @@ const renderTallyToolOwnerAssigned: TemplateRenderer = (data, opts) => {
   return { subject, html, text };
 };
 
+function trainingButton(url: string, label: string): string {
+  return url
+    ? `<p style="margin:0 0 16px;"><a href="${escapeHtml(url)}" style="display:inline-block;padding:10px 16px;background:#2f4f6b;color:#ffffff;border-radius:6px;text-decoration:none;font-size:14px;">${escapeHtml(label)}</a></p>`
+    : "";
+}
+
+/**
+ * Aitally: a staff member has AI-literacy training to complete — which
+ * course and by when. A later cycle of the same course (the annual
+ * re-training) says so.
+ */
+const renderTallyTrainingAssigned: TemplateRenderer = (data, opts) => {
+  const courseTitle = str(data, "courseTitle");
+  const dueOn = str(data, "dueOn");
+  const cycle = Number(str(data, "cycle") || "1");
+  const trainingUrl = str(data, "trainingUrl");
+  const brand = opts.brandName ?? "";
+  const again = cycle > 1;
+  const subject = again ? `Time to refresh your training: ${courseTitle}` : `Training to complete: ${courseTitle}`;
+  const lead = again
+    ? `It is time to take "${courseTitle}" again: your company repeats this AI training every year.`
+    : `Your company has assigned you the AI training "${courseTitle}".`;
+  const text = [lead, `Please complete it by ${dueOn}.`, ...(trainingUrl ? [trainingUrl] : [])].join("\n\n");
+  const html = htmlShell(
+    again ? "Time to refresh your training" : "Training to complete",
+    [
+      `<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`,
+      `<p style="margin:0 0 16px;font-size:14px;">Please complete it by <strong>${escapeHtml(dueOn)}</strong>.</p>`,
+      trainingButton(trainingUrl, "Open my training"),
+    ].join(""),
+    escapeHtml(brand ? `Sent by ${brand}` : "Sent by Aitally"),
+  );
+  return { subject, html, text };
+};
+
+/**
+ * Aitally: one rung of the training reminder ladder. The assignee hears 7, 1
+ * and 0 days before the due date and on every late rung; the owner of the
+ * course's tool is copied 3 and 7 days late, and the organization's owners
+ * 14 days late. Each reads the same facts, addressed to their role.
+ */
+const renderTallyTrainingReminder: TemplateRenderer = (data, opts) => {
+  const courseTitle = str(data, "courseTitle");
+  const assigneeEmail = str(data, "assigneeEmail");
+  const dueOn = str(data, "dueOn");
+  const days = Number(str(data, "daysRemaining") || "0");
+  const toolName = str(data, "toolName");
+  const role = str(data, "role");
+  const trainingUrl = str(data, "trainingUrl");
+  const brand = opts.brandName ?? "";
+  const when =
+    days > 1 ? `is due in ${days} days, on ${dueOn}` : days === 1 ? `is due tomorrow, ${dueOn}` : days === 0 ? `is due today, ${dueOn}` : `was due on ${dueOn}, ${-days} days ago`;
+  let subject: string;
+  let lead: string;
+  if (role === "assignee") {
+    subject = days < 0 ? `Overdue: ${courseTitle}` : `Reminder: ${courseTitle} ${days === 0 ? "is due today" : days === 1 ? "is due tomorrow" : `is due in ${days} days`}`;
+    lead = `Your AI training "${courseTitle}" ${when}.`;
+  } else {
+    subject = `Overdue training: ${assigneeEmail} — ${courseTitle}`;
+    const why =
+      role === "tool_owner"
+        ? `You are receiving this as the owner of ${toolName || "the AI tool this course covers"}.`
+        : "You are receiving this as an owner of the organization.";
+    lead = `${assigneeEmail} has not completed the AI training "${courseTitle}", which ${when}. ${why}`;
+  }
+  const text = [lead, ...(trainingUrl ? [trainingUrl] : [])].join("\n\n");
+  const html = htmlShell(
+    days < 0 ? "Training overdue" : "Training reminder",
+    [`<p style="margin:0 0 16px;font-size:14px;">${escapeHtml(lead)}</p>`, trainingButton(trainingUrl, "Open the training")].join(""),
+    escapeHtml(brand ? `Sent by ${brand}` : "Sent by Aitally"),
+  );
+  return { subject, html, text };
+};
+
 const TEMPLATES: Record<string, TemplateRenderer> = {
   "tally.tool.owner_assigned": renderTallyToolOwnerAssigned,
+  "tally.training.assigned": renderTallyTrainingAssigned,
+  "tally.training.reminder": renderTallyTrainingReminder,
   "auth.magic_link": renderMagicLink,
   "invitation.created": renderInvitationCreated,
   "invitation.accepted": renderInvitationAccepted,

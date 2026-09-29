@@ -2,7 +2,7 @@ apiVersion: sourceplane.io/v1
 kind: Component
 metadata:
   name: tally-worker
-  description: Cloudflare Worker for the AI tool register and its reviews (and, from AT2, staff AI-training records)
+  description: Cloudflare Worker for the AI tool register and its reviews, staff AI-training records with material in R2, and the daily training clock
 spec:
   type: cloudflare-worker-turbo
   lifecycle: production
@@ -16,6 +16,9 @@ spec:
     - component: membership-worker
     - component: policy-worker
     - component: notifications-worker
+    # The TALLY_CONTENT binding names a bucket that must exist before the
+    # deploy: the R2 component applies first in the same run.
+    - component: cloudflare-r2
   # BF6 wiring documents from orun secrets (SEC-JOB): lease-published by
   # the infra components; wire-live renders the wrangler template from
   # these instead of Secrets Manager documents.
@@ -70,3 +73,4 @@ spec:
     layer: runtime
     surface: tally
     runtime: cloudflare
+# orun: redeploy AT2 — training (packages/db 210_tally_training + training repository, packages/contracts training wire)

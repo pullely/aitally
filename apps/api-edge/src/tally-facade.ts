@@ -10,13 +10,29 @@ import { createTimings } from "@saas/contracts/timing";
 // membership + policy itself. The actor's email travels too: a review records
 // who made it.
 
-const TALLY_RE = /^\/v1\/organizations\/[^/]+\/ai-tools(?:\/[^/]+(?:\/reviews)?)?$/;
+//
+// AT2 adds the training lane under the same org prefix (courses, their
+// material in R2, assignments, completion, the on-demand sweep) and each
+// tool's named users; and the caller's own training, /v1/me/training.
+const TALLY_RE =
+  /^\/v1\/organizations\/[^/]+\/(?:ai-tools(?:\/[^/]+(?:\/(?:reviews|users))?)?|training\/(?:courses(?:\/[^/]+(?:\/(?:materials(?:\/[^/]+)?|assign))?)?|assignments(?:\/[^/]+\/complete)?|sweep))$/;
 
-const FORWARDED_HEADERS = ["content-type", "content-length", "traceparent", "idempotency-key"];
+const ME_TRAINING_RE = /^\/v1\/me\/training$/;
+
+const FORWARDED_HEADERS = ["content-type", "content-length", "traceparent", "idempotency-key", "x-filename"];
 const BODY_METHODS = new Set(["POST", "PATCH", "PUT"]);
 
 export function isTallyRoute(pathname: string): boolean {
-  return TALLY_RE.test(pathname);
+  return TALLY_RE.test(pathname) || ME_TRAINING_RE.test(pathname);
+}
+
+/**
+ * `/v1/me/training` lives under `/v1/me/…`. index.ts dispatches it ahead of
+ * every other facade — the auth facade included — so an identity `/v1/me`
+ * route can never shadow it.
+ */
+export function isTallyMeRoute(pathname: string): boolean {
+  return ME_TRAINING_RE.test(pathname);
 }
 
 export async function handleTallyRoute(
