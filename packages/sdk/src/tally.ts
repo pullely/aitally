@@ -1,4 +1,18 @@
 import type {
+  AssignTrainingRequest,
+  AssignTrainingResponse,
+  CompleteTrainingRequest,
+  CompleteTrainingResponse,
+  CreateTrainingCourseRequest,
+  GetTrainingCourseResponse,
+  ListTrainingAssignmentsResponse,
+  ListTrainingCoursesResponse,
+  MyTrainingResponse,
+  PublicTrainingMaterial,
+  ToolUsersResponse,
+  TrainingCourseResponse,
+  TrainingSweepResponse,
+  UpdateTrainingCourseRequest,
   AiToolResponse,
   AiToolReviewResponse,
   CreateAiToolRequest,
@@ -8,10 +22,13 @@ import type {
   UpdateAiToolRequest,
 } from "@saas/contracts/tally";
 
-import type { RequestOptions, Transport } from "./transport.js";
+import { decodeError } from "./errors.js";
+import { generateRequestId, type RequestOptions, type Transport } from "./transport.js";
 
 const org = (orgId: string): string => `/v1/organizations/${encodeURIComponent(orgId)}`;
 const tool = (orgId: string, toolId: string): string => `${org(orgId)}/ai-tools/${encodeURIComponent(toolId)}`;
+const course = (orgId: string, courseId: string): string =>
+  `${org(orgId)}/training/courses/${encodeURIComponent(courseId)}`;
 
 /**
  * Aitally client — the AI tool register and each tool's dated reviews.
@@ -58,5 +75,111 @@ export class TallyClient {
       { method: "POST", path: `${tool(orgId, toolId)}/reviews`, body },
       opts,
     );
+  }
+
+  // ── AT2: training ─────────────────────────────────────────
+
+  /** GET /v1/organizations/:orgId/ai-tools/:toolId/users — the tool's named users. */
+  getToolUsers(orgId: string, toolId: string, opts: RequestOptions = {}): Promise<ToolUsersResponse> {
+    return this.transport.request<ToolUsersResponse>({ method: "GET", path: `${tool(orgId, toolId)}/users` }, opts);
+  }
+
+  /** PUT /v1/organizations/:orgId/ai-tools/:toolId/users — replace the tool's named users. */
+  setToolUsers(orgId: string, toolId: string, emails: string[], opts: RequestOptions = {}): Promise<ToolUsersResponse> {
+    return this.transport.request<ToolUsersResponse>({ method: "PUT", path: `${tool(orgId, toolId)}/users`, body: { emails } }, opts);
+  }
+
+  listCourses(orgId: string, opts: RequestOptions = {}): Promise<ListTrainingCoursesResponse> {
+    return this.transport.request<ListTrainingCoursesResponse>({ method: "GET", path: `${org(orgId)}/training/courses` }, opts);
+  }
+
+  createCourse(orgId: string, body: CreateTrainingCourseRequest, opts: RequestOptions = {}): Promise<TrainingCourseResponse> {
+    return this.transport.request<TrainingCourseResponse>({ method: "POST", path: `${org(orgId)}/training/courses`, body }, opts);
+  }
+
+  getCourse(orgId: string, courseId: string, opts: RequestOptions = {}): Promise<GetTrainingCourseResponse> {
+    return this.transport.request<GetTrainingCourseResponse>({ method: "GET", path: course(orgId, courseId) }, opts);
+  }
+
+  updateCourse(
+    orgId: string,
+    courseId: string,
+    body: UpdateTrainingCourseRequest,
+    opts: RequestOptions = {},
+  ): Promise<TrainingCourseResponse> {
+    return this.transport.request<TrainingCourseResponse>({ method: "PATCH", path: course(orgId, courseId), body }, opts);
+  }
+
+  /**
+   * POST /v1/organizations/:orgId/training/courses/:courseId/materials — the
+   * body is the file itself (PDF, MP4, PNG, JPEG or Word, up to 50 MB), not JSON.
+   */
+  async uploadMaterial(
+    orgId: string,
+    courseId: string,
+    file: Blob | ArrayBuffer | Uint8Array,
+    meta: { contentType: string; filename: string },
+    opts: RequestOptions = {},
+  ): Promise<{ material: PublicTrainingMaterial }> {
+    const t = this.transport;
+    const requestId = opts.requestId ?? generateRequestId();
+    const headers = new Headers();
+    for (const [k, v] of Object.entries(t.defaultHeaders)) headers.set(k, v);
+    if (t.auth?.kind === "bearer") headers.set("authorization", `Bearer ${t.auth.token}`);
+    if (t.auth?.kind === "session") headers.set("cookie", t.auth.cookie);
+    headers.set("content-type", meta.contentType);
+    headers.set("x-filename", meta.filename);
+    headers.set("accept", "application/json");
+    headers.set("x-request-id", requestId);
+    if (opts.idempotencyKey !== undefined) headers.set("idempotency-key", opts.idempotencyKey);
+    const init: RequestInit = { method: "POST", headers, body: file as BodyInit };
+    if (opts.signal !== undefined) init.signal = opts.signal;
+    const response = await t.fetchImpl(`${t.baseUrl}${course(orgId, courseId)}/materials`, init);
+    if (!response.ok) throw await decodeError(response, requestId);
+    const parsed = (await response.json()) as { data: { material: PublicTrainingMaterial } };
+    return parsed.data;
+  }
+
+  /** The URL a material version downloads from (the caller supplies its own credentials). */
+  materialUrl(orgId: string, courseId: string, materialId: string): string {
+    return `${this.transport.baseUrl}${course(orgId, courseId)}/materials/${encodeURIComponent(materialId)}`;
+  }
+
+  assign(orgId: string, courseId: string, body: AssignTrainingRequest, opts: RequestOptions = {}): Promise<AssignTrainingResponse> {
+    return this.transport.request<AssignTrainingResponse>({ method: "POST", path: `${course(orgId, courseId)}/assign`, body }, opts);
+  }
+
+  listAssignments(
+    orgId: string,
+    query: { status?: string; email?: string; courseId?: string } = {},
+    opts: RequestOptions = {},
+  ): Promise<ListTrainingAssignmentsResponse> {
+    return this.transport.request<ListTrainingAssignmentsResponse>(
+      { method: "GET", path: `${org(orgId)}/training/assignments`, query: { status: query.status, email: query.email, courseId: query.courseId } },
+      opts,
+    );
+  }
+
+  /** POST …/training/assignments/:assignmentId/complete — the assignee only. */
+  complete(
+    orgId: string,
+    assignmentId: string,
+    body: CompleteTrainingRequest = {},
+    opts: RequestOptions = {},
+  ): Promise<CompleteTrainingResponse> {
+    return this.transport.request<CompleteTrainingResponse>(
+      { method: "POST", path: `${org(orgId)}/training/assignments/${encodeURIComponent(assignmentId)}/complete`, body },
+      opts,
+    );
+  }
+
+  /** POST …/training/sweep — run today's training clock for this org now (writers). */
+  runSweep(orgId: string, opts: RequestOptions = {}): Promise<TrainingSweepResponse> {
+    return this.transport.request<TrainingSweepResponse>({ method: "POST", path: `${org(orgId)}/training/sweep`, body: {} }, opts);
+  }
+
+  /** GET /v1/me/training — the caller's own assignments across their organizations. */
+  myTraining(opts: RequestOptions = {}): Promise<MyTrainingResponse> {
+    return this.transport.request<MyTrainingResponse>({ method: "GET", path: "/v1/me/training" }, opts);
   }
 }

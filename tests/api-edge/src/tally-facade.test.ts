@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { isTallyRoute, handleTallyRoute } from "@api-edge/tally-facade";
+import { isTallyRoute, isTallyMeRoute, handleTallyRoute } from "@api-edge/tally-facade";
 import { isOrgRoute } from "@api-edge/org-facade";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -49,6 +49,16 @@ describe("api-edge tally facade", () => {
       "/v1/organizations/org_a/ai-tools",
       "/v1/organizations/org_a/ai-tools/ait_b",
       "/v1/organizations/org_a/ai-tools/ait_b/reviews",
+      "/v1/organizations/org_a/ai-tools/ait_b/users",
+      "/v1/organizations/org_a/training/courses",
+      "/v1/organizations/org_a/training/courses/atc_b",
+      "/v1/organizations/org_a/training/courses/atc_b/materials",
+      "/v1/organizations/org_a/training/courses/atc_b/materials/atm_c",
+      "/v1/organizations/org_a/training/courses/atc_b/assign",
+      "/v1/organizations/org_a/training/assignments",
+      "/v1/organizations/org_a/training/assignments/ata_b/complete",
+      "/v1/organizations/org_a/training/sweep",
+      "/v1/me/training",
     ]) {
       expect(isTallyRoute(p)).toBe(true);
     }
@@ -59,9 +69,44 @@ describe("api-edge tally facade", () => {
       "/v1/organizations/org_a/ai-tools/ait_b/reviews/atr_c",
       "/v1/organizations/org_a/ai-tools/ait_b/owners",
       "/v1/organizations/org_a/ai-toolsx",
+      "/v1/organizations/org_a/training",
+      "/v1/organizations/org_a/training/assignments/ata_b",
+      "/v1/organizations/org_a/training/courses/atc_b/materials/atm_c/x",
+      "/v1/me",
+      "/v1/me/training/x",
     ]) {
       expect(isTallyRoute(p)).toBe(false);
     }
+  });
+
+  it("claims /v1/me/training as a me-route, dispatched ahead of the auth facade", () => {
+    expect(isTallyMeRoute("/v1/me/training")).toBe(true);
+    expect(isTallyMeRoute("/v1/organizations/org_a/training/courses")).toBe(false);
+    const index = readFileSync(resolve(__dirname, "../../../apps/api-edge/src/index.ts"), "utf8");
+    expect(index.indexOf("isTallyMeRoute(url.pathname)")).toBeGreaterThan(0);
+    expect(index.indexOf("isTallyMeRoute(url.pathname)")).toBeLessThan(index.indexOf("isAuthRoute(url.pathname)"));
+  });
+
+  it("forwards a material upload's raw body and x-filename", async () => {
+    const id = identity("usr_abc123");
+    const worker = recorder(() => Response.json({ data: {}, meta: { requestId: "r", cursor: null } }, { status: 201 }));
+    const bytes = new Uint8Array([37, 80, 68, 70]);
+    const request = new Request("https://api.example.com/v1/organizations/org_a/training/courses/atc_b/materials", {
+      method: "POST",
+      headers: { authorization: "Bearer sps_ses_abc.secret", "content-type": "application/pdf", "x-filename": "policy.pdf" },
+      body: bytes,
+    });
+    const response = await handleTallyRoute(
+      request,
+      { IDENTITY_WORKER: id.fetcher, TALLY_WORKER: worker.fetcher, ENVIRONMENT: "test" },
+      "req_test",
+      "/v1/organizations/org_a/training/courses/atc_b/materials",
+    );
+    expect(response.status).toBe(201);
+    const headers = new Headers(worker.calls[0]!.init.headers);
+    expect(headers.get("x-filename")).toBe("policy.pdf");
+    expect(headers.get("content-type")).toBe("application/pdf");
+    expect(new Uint8Array(await new Response(worker.calls[0]!.init.body).arrayBuffer())).toEqual(bytes);
   });
 
   it("is dispatched before the org facade would swallow it", () => {

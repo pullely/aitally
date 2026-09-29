@@ -249,3 +249,242 @@ export function summarizeRegister(
   }
   return { inUse, total: tools.length, byRiskLevel, byStatus, reviewsDue, withPersonalData };
 }
+
+// ═════════════════════════════════════════════════════════════
+// AT2 — training: courses, material, assignments, the reminder ladder
+// ═════════════════════════════════════════════════════════════
+
+export const TRAINING_COURSE_STATUSES = ["draft", "published", "archived"] as const;
+export type TrainingCourseStatus = (typeof TRAINING_COURSE_STATUSES)[number];
+
+export const TRAINING_ASSIGNMENT_STATUSES = ["open", "completed", "excused"] as const;
+export type TrainingAssignmentStatus = (typeof TRAINING_ASSIGNMENT_STATUSES)[number];
+
+/** What a course's material may be: PDF, video, image or Word. */
+export const TRAINING_MATERIAL_CONTENT_TYPES = [
+  "application/pdf",
+  "video/mp4",
+  "image/png",
+  "image/jpeg",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+] as const;
+export const TRAINING_MATERIAL_MAX_BYTES = 50 * 1024 * 1024;
+
+export const TRAINING_DUE_DAYS_DEFAULT = 30;
+export const TRAINING_RECURRENCE_MONTHS_DEFAULT = 12;
+export const TRAINING_PASS_MARK_DEFAULT = 80;
+export const TRAINING_QUIZ_MAX_QUESTIONS = 50;
+
+/**
+ * The reminder ladder. `offset` is days until `due_on` (negative = late).
+ * d7/d1/d0 go to the assignee; late3/late7 add the owner of the course's tool;
+ * late14 goes to the assignee and the org's owners.
+ */
+export const TRAINING_REMINDER_RUNGS = [
+  { rung: "d7", offset: 7 },
+  { rung: "d1", offset: 1 },
+  { rung: "d0", offset: 0 },
+  { rung: "late3", offset: -3 },
+  { rung: "late7", offset: -7 },
+  { rung: "late14", offset: -14 },
+] as const;
+export type TrainingReminderRung = (typeof TRAINING_REMINDER_RUNGS)[number]["rung"];
+
+export const TRAINING_EVENT_TYPES = [
+  "tally.course.created",
+  "tally.course.updated",
+  "tally.course.material_uploaded",
+  "tally.assignment.created",
+  "tally.assignment.completed",
+  "tally.reminder.sent",
+] as const;
+
+/** Whole days from `today` to `dueOn` (both YYYY-MM-DD); negative when late. */
+export function daysUntil(dueOn: string, today: string): number {
+  return Math.round((Date.parse(`${dueOn}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86_400_000);
+}
+
+export function addDaysToDate(date: string, days: number): string {
+  return new Date(Date.parse(`${date}T00:00:00Z`) + days * 86_400_000).toISOString().slice(0, 10);
+}
+
+/**
+ * The rung an open assignment is on today: the latest rung whose day has come.
+ * A sweep that missed a day still sends the rung that is current, never a
+ * stale one, and nothing is sent more than 7 days before the due date.
+ */
+export function trainingReminderRung(daysRemaining: number): TrainingReminderRung | null {
+  let current: TrainingReminderRung | null = null;
+  for (const r of TRAINING_REMINDER_RUNGS) if (daysRemaining <= r.offset) current = r.rung;
+  return current;
+}
+
+export function isEscalationToToolOwner(rung: TrainingReminderRung): boolean {
+  return rung === "late3" || rung === "late7";
+}
+
+export function isEscalationToOrgOwners(rung: TrainingReminderRung): boolean {
+  return rung === "late14";
+}
+
+export interface TrainingQuizQuestion {
+  prompt: string;
+  options: string[];
+  /** Index into options. Only a writer of the org sees it on the wire. */
+  correct?: number;
+}
+
+/** Percentage of questions answered correctly, rounded down. */
+export function scoreQuiz(questions: readonly TrainingQuizQuestion[], answers: readonly number[]): number {
+  if (questions.length === 0) return 100;
+  let right = 0;
+  questions.forEach((q, i) => {
+    if (answers[i] === q.correct) right += 1;
+  });
+  return Math.floor((right * 100) / questions.length);
+}
+
+export interface PublicTrainingMaterial {
+  id: string;
+  courseId: string;
+  version: number;
+  filename: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+  uploadedAt: string;
+}
+
+export interface PublicTrainingCourse {
+  id: string;
+  orgId: string;
+  title: string;
+  summary: string;
+  /** The tool whose users this course is for; null = everyone. */
+  toolId: string | null;
+  dueDays: number;
+  /** 0 = once; otherwise re-assigned this many months after completion. */
+  recurrenceMonths: number;
+  /** null = no quiz: completion is a confirmation that the material was read. */
+  passMarkPct: number | null;
+  quiz: TrainingQuizQuestion[] | null;
+  status: TrainingCourseStatus;
+  /** The newest material version, or null before the first upload. */
+  currentMaterial: PublicTrainingMaterial | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicTrainingAssignment {
+  id: string;
+  orgId: string;
+  courseId: string;
+  courseTitle: string;
+  assigneeEmail: string;
+  cycle: number;
+  assignedOn: string;
+  dueOn: string;
+  status: TrainingAssignmentStatus;
+  /** Open, and due_on is before today (UTC). Derived. */
+  overdue: boolean;
+  completedAt: string | null;
+  scorePct: number | null;
+  /** The SHA-256 of the material version the assignee completed. */
+  materialSha256: string | null;
+  materialVersion: number | null;
+  attemptCount: number;
+  createdAt: string;
+}
+
+export interface CreateTrainingCourseRequest {
+  title: string;
+  summary?: string;
+  toolId?: string | null;
+  dueDays?: number;
+  recurrenceMonths?: number;
+  passMarkPct?: number | null;
+  quiz?: TrainingQuizQuestion[] | null;
+  status?: TrainingCourseStatus;
+}
+
+export type UpdateTrainingCourseRequest = Partial<CreateTrainingCourseRequest>;
+
+export interface TrainingCourseResponse {
+  course: PublicTrainingCourse;
+}
+
+export interface GetTrainingCourseResponse {
+  course: PublicTrainingCourse;
+  materials: PublicTrainingMaterial[];
+  assignments: { total: number; open: number; completed: number; overdue: number };
+}
+
+export interface ListTrainingCoursesResponse {
+  courses: (PublicTrainingCourse & { assignments: { total: number; open: number; completed: number; overdue: number } })[];
+}
+
+export type AssignTrainingRequest =
+  | { emails: string[]; dueOn?: string }
+  | { everyone: true; dueOn?: string }
+  | { toolUsers: true; dueOn?: string };
+
+export interface AssignTrainingResponse {
+  created: PublicTrainingAssignment[];
+  /** Addresses that already hold an open assignment of this course. */
+  skipped: string[];
+  notified: number;
+}
+
+export interface ListTrainingAssignmentsResponse {
+  assignments: PublicTrainingAssignment[];
+}
+
+export interface CompleteTrainingRequest {
+  /** One option index per quiz question; required when the course has a quiz. */
+  answers?: number[];
+  /** The x-content-sha256 of the material the assignee opened; when sent it must be the current version's. */
+  materialSha256?: string;
+}
+
+export interface CompleteTrainingResponse {
+  assignment: PublicTrainingAssignment;
+  attempt: { scorePct: number; passed: boolean };
+}
+
+export interface ToolUsersResponse {
+  toolId: string;
+  emails: string[];
+}
+
+export interface MyTrainingItem extends PublicTrainingAssignment {
+  orgName: string;
+  orgSlug: string;
+  material: PublicTrainingMaterial | null;
+  /** The quiz without its answers; null when the course has none. */
+  quiz: TrainingQuizQuestion[] | null;
+  passMarkPct: number | null;
+}
+
+export interface MyTrainingResponse {
+  assignments: MyTrainingItem[];
+}
+
+export interface TrainingReminderClaim {
+  assignmentId: string;
+  courseId: string;
+  rung: TrainingReminderRung;
+  dueOn: string;
+  daysRemaining: number;
+  recipients: string[];
+  /** How many recipients the notifications worker accepted. */
+  notified: number;
+}
+
+export interface TrainingSweepResponse {
+  today: string;
+  considered: number;
+  claimed: TrainingReminderClaim[];
+  /** Rungs already claimed by an earlier sweep (not sent again). */
+  alreadySent: number;
+  reassigned: PublicTrainingAssignment[];
+}

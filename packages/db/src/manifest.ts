@@ -192,5 +192,14 @@ export const manifest: MigrationManifest = {
       description:
         "AI tool register (AT1) — the AI systems a company uses (purpose, data categories, risk level on the EU AI Act's tiers, status, accountable owner, review interval) and the append-only dated reviews that set their status and next review; a prohibited risk level only on a blocked or retired tool",
     },
+    {
+      id: "210_tally_training",
+      context: "tally",
+      path: "210_tally_training/up.sql",
+      checksum:
+        "30cf9924bbea44393578be556e16b1866bed43c9539e7e815d3847670190b61c",
+      description:
+        "Staff AI-literacy training (AT2) — courses with immutable material versions (R2 key + SHA-256) and an optional quiz, the named users of each tool, one assignment per (course, person, cycle) whose completion records the time, score and material hash, every quiz attempt, and the reminder ladder's once-per-rung claims",
+    },
   ],
 };

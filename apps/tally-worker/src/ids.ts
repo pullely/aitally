@@ -16,6 +16,29 @@ export const parseToolPublicId = (id: string): Uuid | null => uuidFromPublicId(i
 
 export const reviewPublicId = (uuid: string): string => `atr_${uuidToHex(uuid)}`;
 
+// AT2 — training.
+export const coursePublicId = (uuid: string): string => `atc_${uuidToHex(uuid)}`;
+export const parseCoursePublicId = (id: string): Uuid | null => uuidFromPublicId(id, "atc");
+export const materialPublicId = (uuid: string): string => `atm_${uuidToHex(uuid)}`;
+export const parseMaterialPublicId = (id: string): Uuid | null => uuidFromPublicId(id, "atm");
+export const assignmentPublicId = (uuid: string): string => `ata_${uuidToHex(uuid)}`;
+export const parseAssignmentPublicId = (id: string): Uuid | null => uuidFromPublicId(id, "ata");
+
+/**
+ * Every form membership may hold this actor's subject id in: as sent, the
+ * `usr_<hex>` public id and the UUID (runbook trap 39 — D1 membership rows
+ * carry `usr_<hex>`, identity the UUID).
+ */
+export function subjectIdForms(subjectId: string): string[] {
+  const uuid = actorSubjectUuid(subjectId);
+  const forms = new Set<string>([subjectId]);
+  if (uuid) {
+    forms.add(uuid);
+    forms.add(`usr_${uuidToHex(uuid)}`);
+  }
+  return [...forms];
+}
+
 /**
  * The actor id in the shape a UUID column takes: pass a UUID through, decode a
  * `usr_<hex>` public id, and write null rather than garbage for anything else.

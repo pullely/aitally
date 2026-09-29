@@ -2,6 +2,10 @@
 // Resource IDs are NEVER committed: @@wiring(<component>/<env>:<key>)@@ tokens are
 // resolved from the workspace's orun secrets at deploy time (wire-live) or from the
 // committed wiring.fixture.json for offline dry-runs (wire-fixture).
+//
+// The R2 binding resolves by bucket NAME. Orun prefixes the bucket
+// infra/terraform/cloudflare-r2 declares with the environment (stg-/prod-,
+// runbook trap 26), so the binding names the prefixed bucket.
 {
   "name": "aitally-tally-worker",
   "compatibility_date": "2025-05-01",
@@ -10,6 +14,11 @@
   "minify": false,
   "vars": {
     "ENVIRONMENT": "local"
+  },
+  // The training clock (AT2): 07:00 UTC is the morning of the working day
+  // across the EU. Inherited by stage and prod.
+  "triggers": {
+    "crons": ["0 7 * * *"]
   },
   "env": {
     "dev": {
@@ -27,6 +36,12 @@
           "binding": "PLATFORM_DB",
           "database_name": "aitally-stage",
           "database_id": "@@wiring(cloudflare-d1/stage:d1_database_id)@@"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "TALLY_CONTENT",
+          "bucket_name": "stg-aitally-training-content-stage"
         }
       ],
       "services": [
@@ -54,6 +69,12 @@
           "binding": "PLATFORM_DB",
           "database_name": "aitally-prod",
           "database_id": "@@wiring(cloudflare-d1/prod:d1_database_id)@@"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "TALLY_CONTENT",
+          "bucket_name": "prod-aitally-training-content-prod"
         }
       ],
       "services": [
