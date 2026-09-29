@@ -7,8 +7,8 @@ the code departed from `design.md`.
 |---|---|---|
 | AT0 — the spec | ✅ Landed. Doc set on `main` and pushed with `orun spec push` | #9 (d5c4151) |
 | AT1 — the AI tool register | ✅ Landed. Deploy run 35910146783 on `main` green 66/66; stage smoke 29/29, prod 7/7 (2026-09-23) | #10 (f3f91ed), task AT-2 |
-| AT2 — training assignments, completion records and escalating reminders | In progress | task AT-3 |
-| AT3 — the regulator-ready evidence pack | | |
+| AT2 — training assignments, completion records and escalating reminders | ✅ Landed. Deploy run 36642817780 on `main` green 34/34 (cloudflare-r2 applied stage + prod, `210_tally_training` migrated, `0 7 * * *` scheduled on tally-worker stage + prod); stage smoke 59/59, prod 16/16 (2026-09-29) | #11 (bf51aeb), task AT-3 |
+| AT3 — the regulator-ready evidence pack | In progress | task AT-4 |
 
 ## Departures from the design
 
@@ -73,3 +73,28 @@ the code departed from `design.md`.
 - **No new policy action.** Training reuses `tally.read` / `tally.write`, so
   `policy-worker` did not need a redeploy (trap 17). events-worker gained the
   `atc_`, `ata_` and (ahead of AT3) `atx_` subject prefixes.
+
+### AT3
+
+- **Every pack holds the same five files, whatever its scope.** An org pack
+  covers everything. An employee pack covers that person's training records and
+  the tools they were trained for or are a named user of, with those tools'
+  reviews. A tool pack covers that tool, its reviews and the training for it.
+- **Immutability is enforced twice.** Every object is written under a fresh
+  `orgs/{org}/packs/{atx}/` prefix with `onlyIf: If-None-Match: *`, and R2
+  refuses the put if the key exists (the request then fails, and no row is
+  written). No route updates or deletes a pack: `PUT`, `PATCH` and `DELETE`
+  answer 405. R2 also checks each object's SHA-256 on the way in.
+- **`manifest.json` lists the other four files; its own digest is the pack's
+  `manifestSha256`**, stored in D1 and shown in the console. `summary.pdf`
+  lists the three CSVs' digests.
+- **`GET …/evidence-packs/{atx}`** (one pack's metadata) was added beside the
+  list and the file download.
+- **The per-tool CSV is that tool's training records.** Its JSON carries the
+  tool, its reviews, its named users and the records.
+- **CSV cells that a spreadsheet would read as a formula** (leading `=`, `+`,
+  `-`, `@`) are prefixed with an apostrophe.
+- **`summary.pdf` is A4** (the EU paper size), from the hand-rolled PDF 1.4
+  writer carried over from leakbook and arcdesk.
+- **identity-worker's public `workers.dev` hostname is closed** in this PR
+  (runbook trap 37): `"workers_dev": false` on stage and prod.

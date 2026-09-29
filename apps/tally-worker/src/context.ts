@@ -1,13 +1,14 @@
 import type { Env } from "./env.js";
-import type { TallyRepository, TrainingRepository } from "@saas/db/tally";
+import type { EvidenceRepository, TallyRepository, TrainingRepository } from "@saas/db/tally";
 import type { SqlExecutor } from "@saas/db/d1";
-import { createTallyRepository, createTrainingRepository } from "@saas/db/tally";
+import { createEvidenceRepository, createTallyRepository, createTrainingRepository } from "@saas/db/tally";
 import { createSqlExecutor } from "@saas/db/d1";
 
 export interface Db {
   executor: SqlExecutor;
   tally: TallyRepository;
   training: TrainingRepository;
+  evidence: EvidenceRepository;
 }
 
 /** Open the request's database handle, or null when the binding is missing. */
@@ -18,6 +19,7 @@ export function openDb(env: Env): (Db & { dispose(): Promise<void> }) | null {
     executor,
     tally: createTallyRepository(executor),
     training: createTrainingRepository(executor),
+    evidence: createEvidenceRepository(executor),
     dispose: () => executor.dispose(),
   };
 }

@@ -488,3 +488,150 @@ export interface TrainingSweepResponse {
   alreadySent: number;
   reassigned: PublicTrainingAssignment[];
 }
+
+// ═════════════════════════════════════════════════════════════
+// AT3 — evidence: per-employee and per-tool exports, immutable packs
+// ═════════════════════════════════════════════════════════════
+
+export const EVIDENCE_PACK_SCOPES = ["org", "employee", "tool"] as const;
+export type EvidencePackScope = (typeof EVIDENCE_PACK_SCOPES)[number];
+
+/** The files every pack holds, in manifest order (manifest.json itself last). */
+export const EVIDENCE_PACK_FILES = ["register.csv", "reviews.csv", "training-records.csv", "summary.pdf", "manifest.json"] as const;
+export type EvidencePackFileName = (typeof EVIDENCE_PACK_FILES)[number];
+
+export interface EvidencePackFile {
+  name: string;
+  contentType: string;
+  byteSize: number;
+  sha256: string;
+}
+
+export interface PublicEvidencePack {
+  id: string;
+  orgId: string;
+  scope: EvidencePackScope;
+  /** The employee's email or the tool's ait_ id; null for an org pack. */
+  subject: string | null;
+  asOf: string;
+  /** Every file, manifest.json included. */
+  files: EvidencePackFile[];
+  /** The SHA-256 of manifest.json, which lists every other file's digest. */
+  manifestSha256: string;
+  requestedByEmail: string | null;
+  createdAt: string;
+}
+
+/** manifest.json: what the pack holds, as of when, and each file's digest. */
+export interface EvidenceManifest {
+  pack: string;
+  organization: string;
+  organizationName: string;
+  scope: EvidencePackScope;
+  subject: string | null;
+  asOf: string;
+  generator: string;
+  /** Every file except manifest.json itself. */
+  files: EvidencePackFile[];
+}
+
+/** One assignment, as the evidence reads it. */
+export interface EvidenceTrainingRecord {
+  assignmentId: string;
+  courseId: string;
+  courseTitle: string;
+  toolId: string | null;
+  assigneeEmail: string;
+  cycle: number;
+  assignedOn: string;
+  dueOn: string;
+  status: TrainingAssignmentStatus;
+  completedAt: string | null;
+  scorePct: number | null;
+  materialVersion: number | null;
+  materialSha256: string | null;
+  attemptCount: number;
+}
+
+export interface EmployeeEvidenceResponse {
+  email: string;
+  asOf: string;
+  records: EvidenceTrainingRecord[];
+  /** Tools this person is a named user of (ait_ ids). */
+  toolIds: string[];
+}
+
+export interface ToolEvidenceResponse {
+  asOf: string;
+  tool: PublicAiTool;
+  reviews: PublicAiToolReview[];
+  userEmails: string[];
+  records: EvidenceTrainingRecord[];
+}
+
+export interface CreateEvidencePackRequest {
+  scope: EvidencePackScope;
+  /** The employee's email (scope employee) or the tool's ait_ id (scope tool). */
+  subject?: string;
+}
+
+export interface EvidencePackResponse {
+  pack: PublicEvidencePack;
+}
+
+export interface ListEvidencePacksResponse {
+  packs: PublicEvidencePack[];
+}
+
+export const TRAINING_RECORD_CSV_COLUMNS = [
+  "assignment_id",
+  "course_id",
+  "course_title",
+  "tool_id",
+  "assignee_email",
+  "cycle",
+  "assigned_on",
+  "due_on",
+  "status",
+  "completed_at",
+  "score_pct",
+  "material_version",
+  "material_sha256",
+  "attempts",
+] as const;
+
+/**
+ * RFC 4180 CSV: every field quoted when it holds a comma, quote or line break;
+ * CRLF line ends. A text field that a spreadsheet would read as a formula
+ * (leading =, +, -, @) is prefixed with an apostrophe, so opening the file
+ * never runs anything.
+ */
+export function toCsv(header: readonly string[], rows: readonly (readonly (string | number | null)[])[]): string {
+  const cell = (v: string | number | null): string => {
+    if (v === null) return "";
+    if (typeof v === "number") return String(v);
+    let s = v;
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  return [header, ...rows].map((r) => r.map(cell).join(",")).join("\r\n") + "\r\n";
+}
+
+export function trainingRecordRow(r: EvidenceTrainingRecord): (string | number | null)[] {
+  return [
+    r.assignmentId,
+    r.courseId,
+    r.courseTitle,
+    r.toolId,
+    r.assigneeEmail,
+    r.cycle,
+    r.assignedOn,
+    r.dueOn,
+    r.status,
+    r.completedAt,
+    r.scorePct,
+    r.materialVersion,
+    r.materialSha256,
+    r.attemptCount,
+  ];
+}

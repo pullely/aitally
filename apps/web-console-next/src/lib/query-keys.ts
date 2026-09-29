@@ -16,6 +16,7 @@ export const qk = {
   trainingCourse: (orgId: string, courseId: string) => ["trainingCourse", orgId, courseId] as const,
   trainingAssignments: (orgId: string, courseId: string) => ["trainingAssignments", orgId, courseId] as const,
   myTraining: () => ["myTraining"] as const,
+  evidencePacks: (orgId: string) => ["evidencePacks", orgId] as const,
   environments: (orgId: string, projectId: string) =>
     ["environments", orgId, projectId] as const,
   members: (orgId: string) => ["members", orgId] as const,

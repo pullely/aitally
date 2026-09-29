@@ -9,6 +9,7 @@ import {
   daysUntil,
   scoreQuiz,
   trainingReminderRung,
+  toCsv,
 } from "@saas/contracts/tally";
 
 describe("tally contracts", () => {
@@ -80,5 +81,13 @@ describe("tally training contracts", () => {
     expect(scoreQuiz(q, [0, 1, 2])).toBe(100);
     expect(scoreQuiz(q, [0, 1, 0])).toBe(66);
     expect(scoreQuiz(q, [])).toBe(0);
+  });
+});
+
+describe("tally evidence contracts", () => {
+  it("writes RFC 4180 CSV with CRLF, quoting what needs it and neutralising formulas", () => {
+    expect(toCsv(["a", "b"], [["x", 1], [null, 'say "hi", then go']])).toBe('a,b\r\nx,1\r\n,"say ""hi"", then go"\r\n');
+    expect(toCsv(["f"], [["=HYPERLINK(1)"], ["+1"], ["@x"], ["-x"], ["ok"]])).toBe("f\r\n'=HYPERLINK(1)\r\n'+1\r\n'@x\r\n'-x\r\nok\r\n");
+    expect(toCsv(["n"], [[-3]])).toBe("n\r\n-3\r\n");
   });
 });

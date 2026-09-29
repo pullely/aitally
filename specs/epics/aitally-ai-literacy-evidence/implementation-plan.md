@@ -53,7 +53,7 @@ first audited write works on D1:
 - a non-member reading the register gets 404, and a viewer registering a tool gets 404
 - `tests/tally-worker` runs the worker over a real SQLite engine and is green in CI
 
-## AT2 — training assignments, completion records and escalating reminders
+## AT2 — training assignments, completion records and escalating reminders ✅
 
 AT2 adds:
 

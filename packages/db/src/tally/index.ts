@@ -33,3 +33,13 @@ export type {
 } from "./training-types.js";
 
 export { createTrainingRepository } from "./training-repository.js";
+
+export type {
+  CreateEvidencePackInput,
+  EvidenceFileRow,
+  EvidencePack,
+  EvidenceRepository,
+  TrainingRecordRow,
+} from "./evidence-repository.js";
+
+export { createEvidenceRepository } from "./evidence-repository.js";

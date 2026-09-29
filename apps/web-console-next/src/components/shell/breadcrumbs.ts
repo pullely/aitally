@@ -18,6 +18,7 @@ export interface Crumb {
 const SEGMENT_LABELS: Record<string, string> = {
   "ai-tools": "AI register",
   training: "Training",
+  evidence: "Evidence",
   projects: "Projects",
   environments: "Environments",
   usage: "Usage & quota",

@@ -2,6 +2,14 @@ import type { Env } from "./env.js";
 import { handleHealth } from "./handlers/health.js";
 import { handleCreateReview, handleCreateTool, handleGetTool, handleListTools, handleUpdateTool } from "./handlers/tools.js";
 import {
+  handleCreatePack,
+  handleEmployeeEvidence,
+  handleGetPack,
+  handleGetPackFile,
+  handleListPacks,
+  handleToolEvidence,
+} from "./handlers/evidence.js";
+import {
   handleAssign,
   handleCompleteAssignment,
   handleCreateCourse,
@@ -23,6 +31,7 @@ import {
   parseCoursePublicId,
   parseMaterialPublicId,
   parseOrgPublicId,
+  parsePackPublicId,
   parseToolPublicId,
 } from "./ids.js";
 
@@ -67,6 +76,12 @@ const ASSIGNMENTS_RE = /^\/v1\/organizations\/([^/]+)\/training\/assignments$/;
 const ASSIGNMENT_COMPLETE_RE = /^\/v1\/organizations\/([^/]+)\/training\/assignments\/([^/]+)\/complete$/;
 const SWEEP_RE = /^\/v1\/organizations\/([^/]+)\/training\/sweep$/;
 const ME_TRAINING_PATH = "/v1/me/training";
+// AT3 — evidence.
+const EVIDENCE_EMPLOYEE_RE = /^\/v1\/organizations\/([^/]+)\/evidence\/employees\/([^/]+)$/;
+const EVIDENCE_TOOL_RE = /^\/v1\/organizations\/([^/]+)\/evidence\/tools\/([^/]+)$/;
+const PACKS_RE = /^\/v1\/organizations\/([^/]+)\/evidence-packs$/;
+const PACK_RE = /^\/v1\/organizations\/([^/]+)\/evidence-packs\/([^/]+)$/;
+const PACK_FILE_RE = /^\/v1\/organizations\/([^/]+)\/evidence-packs\/([^/]+)\/files\/([^/]+)$/;
 
 function unauthenticated(requestId: string): Response {
   return errorResponse("unauthenticated", "Authentication required", 401, requestId);
@@ -76,6 +91,50 @@ async function routeOrg(request: Request, env: Env, requestId: string, path: str
   let m: RegExpMatchArray | null;
   const method = request.method;
 
+  if ((m = path.match(EVIDENCE_EMPLOYEE_RE))) {
+    const org = parseOrgPublicId(m[1]!);
+    if (!org) return notFound(requestId);
+    if (method !== "GET") return methodNotAllowed(requestId);
+    const actor = resolveActor(request);
+    if (!actor) return unauthenticated(requestId);
+    return handleEmployeeEvidence(request, env, requestId, actor, org, m[2]!);
+  }
+  if ((m = path.match(EVIDENCE_TOOL_RE))) {
+    const org = parseOrgPublicId(m[1]!);
+    const tool = parseToolPublicId(m[2]!);
+    if (!org || !tool) return notFound(requestId);
+    if (method !== "GET") return methodNotAllowed(requestId);
+    const actor = resolveActor(request);
+    if (!actor) return unauthenticated(requestId);
+    return handleToolEvidence(request, env, requestId, actor, org, tool);
+  }
+  if ((m = path.match(PACKS_RE))) {
+    const org = parseOrgPublicId(m[1]!);
+    if (!org) return notFound(requestId);
+    if (method !== "GET" && method !== "POST") return methodNotAllowed(requestId);
+    const actor = resolveActor(request);
+    if (!actor) return unauthenticated(requestId);
+    return method === "GET" ? handleListPacks(env, requestId, actor, org) : handleCreatePack(request, env, requestId, actor, org);
+  }
+  if ((m = path.match(PACK_RE))) {
+    const org = parseOrgPublicId(m[1]!);
+    const pack = parsePackPublicId(m[2]!);
+    if (!org || !pack) return notFound(requestId);
+    // No PUT, PATCH or DELETE: a pack is immutable.
+    if (method !== "GET") return methodNotAllowed(requestId);
+    const actor = resolveActor(request);
+    if (!actor) return unauthenticated(requestId);
+    return handleGetPack(env, requestId, actor, org, pack);
+  }
+  if ((m = path.match(PACK_FILE_RE))) {
+    const org = parseOrgPublicId(m[1]!);
+    const pack = parsePackPublicId(m[2]!);
+    if (!org || !pack) return notFound(requestId);
+    if (method !== "GET") return methodNotAllowed(requestId);
+    const actor = resolveActor(request);
+    if (!actor) return unauthenticated(requestId);
+    return handleGetPackFile(env, requestId, actor, org, pack, m[3]!);
+  }
   if ((m = path.match(TOOL_USERS_RE))) {
     const org = parseOrgPublicId(m[1]!);
     const tool = parseToolPublicId(m[2]!);

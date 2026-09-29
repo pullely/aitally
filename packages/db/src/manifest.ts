@@ -201,5 +201,14 @@ export const manifest: MigrationManifest = {
       description:
         "Staff AI-literacy training (AT2) — courses with immutable material versions (R2 key + SHA-256) and an optional quiz, the named users of each tool, one assignment per (course, person, cycle) whose completion records the time, score and material hash, every quiz attempt, and the reminder ladder's once-per-rung claims",
     },
+    {
+      id: "220_tally_evidence",
+      context: "tally",
+      path: "220_tally_evidence/up.sql",
+      checksum:
+        "d007ff43bae18f3088f71458366a91d60c03a66a2ef3014a13ba81f107258b2d",
+      description:
+        "Evidence packs (AT3) — an immutable, hashed export per org, employee or tool: the R2 files (register, reviews, training records, summary PDF, manifest) with each one's SHA-256 and the manifest's own digest; never regenerated in place",
+    },
   ],
 };

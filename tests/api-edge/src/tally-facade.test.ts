@@ -59,6 +59,11 @@ describe("api-edge tally facade", () => {
       "/v1/organizations/org_a/training/assignments/ata_b/complete",
       "/v1/organizations/org_a/training/sweep",
       "/v1/me/training",
+      "/v1/organizations/org_a/evidence/employees/ann%40acme.example",
+      "/v1/organizations/org_a/evidence/tools/ait_b",
+      "/v1/organizations/org_a/evidence-packs",
+      "/v1/organizations/org_a/evidence-packs/atx_b",
+      "/v1/organizations/org_a/evidence-packs/atx_b/files/manifest.json",
     ]) {
       expect(isTallyRoute(p)).toBe(true);
     }
@@ -74,6 +79,9 @@ describe("api-edge tally facade", () => {
       "/v1/organizations/org_a/training/courses/atc_b/materials/atm_c/x",
       "/v1/me",
       "/v1/me/training/x",
+      "/v1/organizations/org_a/evidence",
+      "/v1/organizations/org_a/evidence/projects/x",
+      "/v1/organizations/org_a/evidence-packs/atx_b/files",
     ]) {
       expect(isTallyRoute(p)).toBe(false);
     }
