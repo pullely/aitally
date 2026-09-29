@@ -11,7 +11,7 @@ export interface AuditInput {
   orgId: string;
   actor: AuditActor;
   requestId: string;
-  subjectKind: "ai_tool" | "ai_tool_review" | "training_course" | "training_assignment";
+  subjectKind: "ai_tool" | "ai_tool_review" | "training_course" | "training_assignment" | "evidence_pack";
   subjectId: string;
   subjectName: string;
   description: string;

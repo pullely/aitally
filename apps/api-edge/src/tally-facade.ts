@@ -14,8 +14,10 @@ import { createTimings } from "@saas/contracts/timing";
 // AT2 adds the training lane under the same org prefix (courses, their
 // material in R2, assignments, completion, the on-demand sweep) and each
 // tool's named users; and the caller's own training, /v1/me/training.
+// AT3 adds the evidence lane: per-employee and per-tool exports and the
+// immutable evidence packs with their files.
 const TALLY_RE =
-  /^\/v1\/organizations\/[^/]+\/(?:ai-tools(?:\/[^/]+(?:\/(?:reviews|users))?)?|training\/(?:courses(?:\/[^/]+(?:\/(?:materials(?:\/[^/]+)?|assign))?)?|assignments(?:\/[^/]+\/complete)?|sweep))$/;
+  /^\/v1\/organizations\/[^/]+\/(?:ai-tools(?:\/[^/]+(?:\/(?:reviews|users))?)?|training\/(?:courses(?:\/[^/]+(?:\/(?:materials(?:\/[^/]+)?|assign))?)?|assignments(?:\/[^/]+\/complete)?|sweep)|evidence\/(?:employees|tools)\/[^/]+|evidence-packs(?:\/[^/]+(?:\/files\/[^/]+)?)?)$/;
 
 const ME_TRAINING_RE = /^\/v1\/me\/training$/;
 

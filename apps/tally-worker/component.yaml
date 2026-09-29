@@ -74,3 +74,4 @@ spec:
     surface: tally
     runtime: cloudflare
 # orun: redeploy AT2 — training (packages/db 210_tally_training + training repository, packages/contracts training wire)
+# orun: redeploy AT3 — evidence packs (packages/db 220_tally_evidence + evidence repository, packages/contracts evidence wire)

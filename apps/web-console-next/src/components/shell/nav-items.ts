@@ -67,6 +67,7 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
             // never sees; their surfaces collapse to the Settings (Account) panel.
             { href: `${orgBase}/ai-tools`, label: "AI register", icon: "Bot" },
             { href: `${orgBase}/training`, label: "Training", icon: "BookOpen" },
+            { href: `${orgBase}/evidence`, label: "Evidence", icon: "ShieldCheck" },
             { href: "/training", label: "My training", icon: "GraduationCap" },
             { href: `${orgBase}/settings`, label: "Settings", icon: "Settings", subPanel: true },
           ]
@@ -75,6 +76,7 @@ export function buildNavSections(scope: NavScope, soloMode: boolean = SOLO_MODE)
             // training record (AT2), and the signed-in person's own training.
             { href: `${orgBase}/ai-tools`, label: "AI register", icon: "Bot" },
             { href: `${orgBase}/training`, label: "Training", icon: "BookOpen" },
+            { href: `${orgBase}/evidence`, label: "Evidence", icon: "ShieldCheck" },
             { href: "/training", label: "My training", icon: "GraduationCap" },
             { href: `${orgBase}/projects`, label: "Projects", icon: "FolderKanban" },
             { href: `${orgBase}/usage`, label: "Usage & quota", icon: "Gauge" },

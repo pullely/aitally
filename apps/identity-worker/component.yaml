@@ -81,3 +81,4 @@ spec:
     runtime: cloudflare
 # ci: re-trigger deploy (batch B — membership-dependents, 20260622T140838Z)
 # orun: redeploy AT1 — packages/db (trap-16 D1 fix, tally context), packages/policy-engine (tally.* actions), packages/contracts (tally-worker notifications caller)
+# orun: redeploy AT3 — close the public workers.dev hostname (runbook trap 37)

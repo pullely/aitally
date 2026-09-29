@@ -1,4 +1,9 @@
 import type {
+  CreateEvidencePackRequest,
+  EmployeeEvidenceResponse,
+  EvidencePackResponse,
+  ListEvidencePacksResponse,
+  ToolEvidenceResponse,
   AssignTrainingRequest,
   AssignTrainingResponse,
   CompleteTrainingRequest,
@@ -181,5 +186,39 @@ export class TallyClient {
   /** GET /v1/me/training — the caller's own assignments across their organizations. */
   myTraining(opts: RequestOptions = {}): Promise<MyTrainingResponse> {
     return this.transport.request<MyTrainingResponse>({ method: "GET", path: "/v1/me/training" }, opts);
+  }
+
+  // ── AT3: evidence ─────────────────────────────────────────
+
+  /** GET …/evidence/employees/:email — exactly that person's training record (JSON; `evidenceUrl` for CSV). */
+  employeeEvidence(orgId: string, email: string, opts: RequestOptions = {}): Promise<EmployeeEvidenceResponse> {
+    return this.transport.request<EmployeeEvidenceResponse>(
+      { method: "GET", path: `${org(orgId)}/evidence/employees/${encodeURIComponent(email)}` },
+      opts,
+    );
+  }
+
+  /** GET …/evidence/tools/:toolId — the tool, its reviews, its users and the training for it. */
+  toolEvidence(orgId: string, toolId: string, opts: RequestOptions = {}): Promise<ToolEvidenceResponse> {
+    return this.transport.request<ToolEvidenceResponse>({ method: "GET", path: `${org(orgId)}/evidence/tools/${encodeURIComponent(toolId)}` }, opts);
+  }
+
+  /** POST …/evidence-packs — build an immutable pack in R2. */
+  createEvidencePack(orgId: string, body: CreateEvidencePackRequest, opts: RequestOptions = {}): Promise<EvidencePackResponse> {
+    return this.transport.request<EvidencePackResponse>({ method: "POST", path: `${org(orgId)}/evidence-packs`, body }, opts);
+  }
+
+  listEvidencePacks(orgId: string, opts: RequestOptions = {}): Promise<ListEvidencePacksResponse> {
+    return this.transport.request<ListEvidencePacksResponse>({ method: "GET", path: `${org(orgId)}/evidence-packs` }, opts);
+  }
+
+  /** The URL one file of a pack downloads from (the caller supplies its own credentials). */
+  evidencePackFileUrl(orgId: string, packId: string, name: string): string {
+    return `${this.transport.baseUrl}${org(orgId)}/evidence-packs/${encodeURIComponent(packId)}/files/${encodeURIComponent(name)}`;
+  }
+
+  /** The CSV export of one person's or one tool's training record. */
+  evidenceCsvUrl(orgId: string, kind: "employees" | "tools", subject: string): string {
+    return `${this.transport.baseUrl}${org(orgId)}/evidence/${kind}/${encodeURIComponent(subject)}?format=csv`;
   }
 }

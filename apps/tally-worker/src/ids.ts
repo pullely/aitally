@@ -24,6 +24,10 @@ export const parseMaterialPublicId = (id: string): Uuid | null => uuidFromPublic
 export const assignmentPublicId = (uuid: string): string => `ata_${uuidToHex(uuid)}`;
 export const parseAssignmentPublicId = (id: string): Uuid | null => uuidFromPublicId(id, "ata");
 
+// AT3 — evidence packs.
+export const packPublicId = (uuid: string): string => `atx_${uuidToHex(uuid)}`;
+export const parsePackPublicId = (id: string): Uuid | null => uuidFromPublicId(id, "atx");
+
 /**
  * Every form membership may hold this actor's subject id in: as sent, the
  * `usr_<hex>` public id and the UUID (runbook trap 39 — D1 membership rows

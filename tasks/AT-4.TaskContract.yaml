@@ -1,0 +1,32 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: AT-4
+spec:
+  goal: A company can export its evidence per employee and per tool, and build an immutable, hashed evidence pack in R2 (register, reviews, training records, a one-page summary PDF and a manifest of SHA-256 digests) to hand to an authority or auditor.
+  # Component refs, fully qualified (runbook trap 15). No new policy action
+  # (evidence reuses tally.read / tally.write). identity-worker is here for
+  # runbook trap 37: its public workers.dev hostname is closed in this PR.
+  affects:
+    - default/aitally/db
+    - default/aitally/db-tests
+    - default/aitally/db-migrate
+    - default/aitally/contracts
+    - default/aitally/contracts-tests
+    - default/aitally/sdk
+    - default/aitally/tally-worker
+    - default/aitally/tally-worker-tests
+    - default/aitally/api-edge
+    - default/aitally/api-edge-tests
+    - default/aitally/identity-worker
+    - default/aitally/identity-worker-tests
+    - default/aitally/web-console-next
+    - default/aitally/web-console-next-tests
+  doneWhen:
+    - migration 220_tally_evidence is in the manifest, replays green against node:sqlite, and is applied on stage and prod
+    - on stage an org pack builds and every file downloads from R2 with the SHA-256 that manifest.json lists
+    - a per-employee export lists exactly that person's assignments and no one else's
+    - a second pack is a new atx_ with its own keys; no object of an earlier pack is overwritten (conditional put)
+    - retired tools and their reviews appear in the pack
+    - identity-worker's public workers.dev hostname answers 404 on stage and prod (trap 37)
+  gates: []

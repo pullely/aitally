@@ -73,3 +73,28 @@ the code departed from `design.md`.
 - **No new policy action.** Training reuses `tally.read` / `tally.write`, so
   `policy-worker` did not need a redeploy (trap 17). events-worker gained the
   `atc_`, `ata_` and (ahead of AT3) `atx_` subject prefixes.
+
+### AT3
+
+- **Every pack holds the same five files, whatever its scope.** An org pack
+  covers everything. An employee pack covers that person's training records and
+  the tools they were trained for or are a named user of, with those tools'
+  reviews. A tool pack covers that tool, its reviews and the training for it.
+- **Immutability is enforced twice.** Every object is written under a fresh
+  `orgs/{org}/packs/{atx}/` prefix with `onlyIf: If-None-Match: *`, and R2
+  refuses the put if the key exists (the request then fails, and no row is
+  written). No route updates or deletes a pack: `PUT`, `PATCH` and `DELETE`
+  answer 405. R2 also checks each object's SHA-256 on the way in.
+- **`manifest.json` lists the other four files; its own digest is the pack's
+  `manifestSha256`**, stored in D1 and shown in the console. `summary.pdf`
+  lists the three CSVs' digests.
+- **`GET …/evidence-packs/{atx}`** (one pack's metadata) was added beside the
+  list and the file download.
+- **The per-tool CSV is that tool's training records.** Its JSON carries the
+  tool, its reviews, its named users and the records.
+- **CSV cells that a spreadsheet would read as a formula** (leading `=`, `+`,
+  `-`, `@`) are prefixed with an apostrophe.
+- **`summary.pdf` is A4** (the EU paper size), from the hand-rolled PDF 1.4
+  writer carried over from leakbook and arcdesk.
+- **identity-worker's public `workers.dev` hostname is closed** in this PR
+  (runbook trap 37): `"workers_dev": false` on stage and prod.
