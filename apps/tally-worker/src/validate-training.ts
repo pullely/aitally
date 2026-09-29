@@ -204,7 +204,6 @@ export function validateCompleteBody(body: unknown): Validation<CompleteFields> 
 /** A safe download name: no path, no quotes or control characters, at most 200 characters. */
 export function sanitizeFilename(raw: string | null): string {
   const base = (raw ?? "").split(/[\\/]/).pop() ?? "";
-  // eslint-disable-next-line no-control-regex -- stripping control characters is the point
   const cleaned = base.replace(/[\u0000-\u001f\u007f"<>|*?:;]/g, "").trim().slice(0, 200);
   return cleaned || "material";
 }

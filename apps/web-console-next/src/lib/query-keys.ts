@@ -12,6 +12,10 @@ export const qk = {
   projects: (orgId: string) => ["projects", orgId] as const,
   aiTools: (orgId: string) => ["aiTools", orgId] as const,
   aiTool: (orgId: string, toolId: string) => ["aiTool", orgId, toolId] as const,
+  trainingCourses: (orgId: string) => ["trainingCourses", orgId] as const,
+  trainingCourse: (orgId: string, courseId: string) => ["trainingCourse", orgId, courseId] as const,
+  trainingAssignments: (orgId: string, courseId: string) => ["trainingAssignments", orgId, courseId] as const,
+  myTraining: () => ["myTraining"] as const,
   environments: (orgId: string, projectId: string) =>
     ["environments", orgId, projectId] as const,
   members: (orgId: string) => ["members", orgId] as const,

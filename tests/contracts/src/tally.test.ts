@@ -5,6 +5,10 @@ import {
   isReviewDue,
   isRiskStatusAllowed,
   summarizeRegister,
+  addDaysToDate,
+  daysUntil,
+  scoreQuiz,
+  trainingReminderRung,
 } from "@saas/contracts/tally";
 
 describe("tally contracts", () => {
@@ -43,5 +47,38 @@ describe("tally contracts", () => {
     expect(summary.byStatus).toEqual({ proposed: 0, approved: 1, restricted: 1, blocked: 0, retired: 1 });
     expect(summary.reviewsDue).toBe(1);
     expect(summary.withPersonalData).toBe(1);
+  });
+});
+
+
+describe("tally training contracts", () => {
+  it("counts whole days to a due date across month and year ends", () => {
+    expect(daysUntil("2026-10-07", "2026-09-30")).toBe(7);
+    expect(daysUntil("2026-09-16", "2026-09-30")).toBe(-14);
+    expect(daysUntil("2027-01-01", "2026-12-31")).toBe(1);
+    expect(addDaysToDate("2026-12-31", 1)).toBe("2027-01-01");
+    expect(addDaysToDate("2026-03-01", -1)).toBe("2026-02-28");
+  });
+
+  it("puts an assignment on the latest rung whose day has come", () => {
+    expect(trainingReminderRung(20)).toBeNull();
+    expect(trainingReminderRung(8)).toBeNull();
+    expect(trainingReminderRung(7)).toBe("d7");
+    expect(trainingReminderRung(3)).toBe("d7");
+    expect(trainingReminderRung(1)).toBe("d1");
+    expect(trainingReminderRung(0)).toBe("d0");
+    expect(trainingReminderRung(-2)).toBe("d0");
+    expect(trainingReminderRung(-3)).toBe("late3");
+    expect(trainingReminderRung(-7)).toBe("late7");
+    expect(trainingReminderRung(-13)).toBe("late7");
+    expect(trainingReminderRung(-14)).toBe("late14");
+    expect(trainingReminderRung(-40)).toBe("late14");
+  });
+
+  it("scores a quiz as the percentage right, rounded down", () => {
+    const q = [0, 1, 2].map((correct) => ({ prompt: "?", options: ["a", "b", "c"], correct }));
+    expect(scoreQuiz(q, [0, 1, 2])).toBe(100);
+    expect(scoreQuiz(q, [0, 1, 0])).toBe(66);
+    expect(scoreQuiz(q, [])).toBe(0);
   });
 });
