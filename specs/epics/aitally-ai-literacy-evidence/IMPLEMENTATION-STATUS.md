@@ -7,8 +7,8 @@ the code departed from `design.md`.
 |---|---|---|
 | AT0 — the spec | ✅ Landed. Doc set on `main` and pushed with `orun spec push` | #9 (d5c4151) |
 | AT1 — the AI tool register | ✅ Landed. Deploy run 35910146783 on `main` green 66/66; stage smoke 29/29, prod 7/7 (2026-09-23) | #10 (f3f91ed), task AT-2 |
-| AT2 — training assignments, completion records and escalating reminders | In progress | task AT-3 |
-| AT3 — the regulator-ready evidence pack | | |
+| AT2 — training assignments, completion records and escalating reminders | ✅ Landed. Deploy run 36642817780 on `main` green 34/34 (cloudflare-r2 applied stage + prod, `210_tally_training` migrated, `0 7 * * *` scheduled on tally-worker stage + prod); stage smoke 59/59, prod 16/16 (2026-09-29) | #11 (bf51aeb), task AT-3 |
+| AT3 — the regulator-ready evidence pack | In progress | task AT-4 |
 
 ## Departures from the design
 
