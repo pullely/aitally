@@ -83,7 +83,7 @@ AT2 adds:
 - an assignment 7 days late emails the tool owner as well as the assignee, and the deploy log lists the `0 7 * * *` schedule on stage and prod
 - a completion 12 months old produces the next cycle's assignment exactly once
 
-## AT3 — the regulator-ready evidence pack
+## AT3 — the regulator-ready evidence pack ✅
 
 AT3 adds:
 
