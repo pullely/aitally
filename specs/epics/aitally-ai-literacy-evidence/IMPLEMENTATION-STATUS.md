@@ -6,8 +6,8 @@ the code departed from `design.md`.
 | Milestone | State | PR |
 |---|---|---|
 | AT0 — the spec | ✅ Landed. Doc set on `main` and pushed with `orun spec push` | #9 (d5c4151) |
-| AT1 — the AI tool register | In review | task AT-2 |
-| AT2 — training assignments, completion records and escalating reminders | | |
+| AT1 — the AI tool register | ✅ Landed. Deploy run 35910146783 on `main` green 66/66; stage smoke 29/29, prod 7/7 (2026-09-23) | #10 (f3f91ed), task AT-2 |
+| AT2 — training assignments, completion records and escalating reminders | In progress | task AT-3 |
 | AT3 — the regulator-ready evidence pack | | |
 
 ## Departures from the design
