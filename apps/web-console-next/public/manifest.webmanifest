@@ -1,11 +1,19 @@
 {
   "name": "Aitally Console",
   "short_name": "Aitally",
-  "description": "Control plane for your projects, environments, and entitlements.",
+  "description": "An AI tool register, staff AI training records and regulator-ready evidence for small teams",
   "start_url": "/orgs",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
-  "orientation": "portrait-primary"
+  "background_color": "#fcfcfd",
+  "theme_color": "#fcfcfd",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }
